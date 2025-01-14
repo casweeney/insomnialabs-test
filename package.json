@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "generate": "ts-node script/ts/generators/merkle.ts",
+    "build:scripts": "tsc"
+  },
+  "dependencies": {
+    "@openzeppelin/merkle-tree": "^1.0.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  }
+}
