@@ -24,32 +24,40 @@ contract MultiUtilityNFT is ERC721, Ownable, ReentrancyGuard {
     address public paymentToken;
     address public sablierContractAddress;
 
+    uint256 tokenIdCounter;
     uint256 public fullMintPrice;
     uint256 public discountedMintPrice;
 
     bytes32 phase1MerkleRoot;
     bytes32 phase2MerkleRoot;
 
-    uint256 tokenIdCounter;
-
     mapping(bytes => bool) public usedSignatures;
 
     event NFTMinted(address indexed to, uint256 indexed tokenId, MintingPhase currentPhase);
     event MintingPhaseUpdated(MintingPhase newPhase);
     event VestingStreamCreated(uint256 streamId);
+    event VestingTokensWithdrawn(uint256 streamId, uint256 amount);
 
     constructor(
         address _paymentToken,
         address _sablierContractAddress,
-        bytes32 _phase1MerkleRoot,
         uint256 _fullMintPrice,
         uint256 _discountedMintPrice
     ) ERC721("MultiUtilityNFT", "MNFT") Ownable(msg.sender) {
         paymentToken = _paymentToken;
         sablierContractAddress = _sablierContractAddress;
-        phase1MerkleRoot = _phase1MerkleRoot;
         fullMintPrice = _fullMintPrice;
         discountedMintPrice = _discountedMintPrice;
+    }
+
+    modifier isMerkleRootSet {
+        if (currentPhase == MintingPhase.Phase1) {
+            require(phase1MerkleRoot != bytes32(0), "Merkle root not set");
+        } else if (currentPhase == MintingPhase.Phase2) {
+            require(phase2MerkleRoot != bytes32(0), "Merkle root not set");
+        }
+
+        _;
     }
 
     function setPhase(MintingPhase _currentPhase) external onlyOwner {
@@ -78,9 +86,9 @@ contract MultiUtilityNFT is ERC721, Ownable, ReentrancyGuard {
         return MerkleProof.verify(proof, root, leaf);
     }
 
-    function mintPhase1(bytes32[] calldata _merkleProof) external nonReentrant {
+    function mint(bytes32[] calldata _phase1MerkleProof) external nonReentrant isMerkleRootSet {
         require(currentPhase == MintingPhase.Phase1, "Not phase 1");
-        require(verifyMerkleProof(_merkleProof, phase1MerkleRoot), "Invalid proof");
+        require(verifyMerkleProof(_phase1MerkleProof, phase1MerkleRoot), "Invalid proof");
 
         _safeMint(msg.sender, tokenIdCounter);
         tokenIdCounter += 1;
@@ -88,9 +96,9 @@ contract MultiUtilityNFT is ERC721, Ownable, ReentrancyGuard {
         emit NFTMinted(msg.sender, tokenIdCounter, MintingPhase.Phase1);
     }
 
-    function mintPhase2(bytes memory _signature, bytes32[] calldata _merkleProof) external nonReentrant {
+    function mintWithDiscount(bytes memory _signature, bytes32[] calldata _phase2MerkleProof) external nonReentrant isMerkleRootSet {
         require(currentPhase == MintingPhase.Phase2, "Not phase 2");
-        require(verifyMerkleProof(_merkleProof, phase2MerkleRoot), "Invalid proof");
+        require(verifyMerkleProof(_phase2MerkleProof, phase2MerkleRoot), "Invalid proof");
         require(verifySignature(_signature), "Invalid signature");
 
         usedSignatures[_signature] = true;
@@ -103,13 +111,12 @@ contract MultiUtilityNFT is ERC721, Ownable, ReentrancyGuard {
         emit NFTMinted(msg.sender, tokenIdCounter, MintingPhase.Phase2);
     }
 
-    function mintPhase3() external nonReentrant {
+    function mintWithoutDiscount() external nonReentrant {
         require(currentPhase == MintingPhase.Phase3, "Not phase 3");
         bool _transfer = IERC20(paymentToken).transferFrom(msg.sender, address(this), fullMintPrice);
         require(_transfer, "Transfer failed");
 
         _safeMint(msg.sender, tokenIdCounter);
-
         tokenIdCounter += 1;
 
         emit NFTMinted(msg.sender, tokenIdCounter, MintingPhase.Phase3);
@@ -138,5 +145,7 @@ contract MultiUtilityNFT is ERC721, Ownable, ReentrancyGuard {
     function withdrawVestedTokens(uint256 _streamId) external onlyOwner {
         uint256 _amountToWithdraw = ISablier(sablierContractAddress).balanceOf(_streamId, owner());
         ISablier(sablierContractAddress).withdrawFromStream(_streamId, _amountToWithdraw);
+
+        emit VestingTokensWithdrawn(_streamId, _amountToWithdraw);
     }
 }
