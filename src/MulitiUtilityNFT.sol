@@ -24,7 +24,7 @@ contract MultiUtilityNFT is ERC721, Ownable, ReentrancyGuard {
     address public paymentToken;
     address public sablierContractAddress;
 
-    uint256 tokenIdCounter;
+    uint256 public tokenIdCounter;
     uint256 public fullMintPrice;
     uint256 public discountedMintPrice;
 
@@ -48,6 +48,7 @@ contract MultiUtilityNFT is ERC721, Ownable, ReentrancyGuard {
         sablierContractAddress = _sablierContractAddress;
         fullMintPrice = _fullMintPrice;
         discountedMintPrice = _discountedMintPrice;
+        currentPhase = MintingPhase.InActive;
     }
 
     modifier isMerkleRootSet {
@@ -56,19 +57,17 @@ contract MultiUtilityNFT is ERC721, Ownable, ReentrancyGuard {
         } else if (currentPhase == MintingPhase.Phase2) {
             require(phase2MerkleRoot != bytes32(0), "Merkle root not set");
         }
-
         _;
     }
 
     function setPhase(MintingPhase _currentPhase) external onlyOwner {
         currentPhase = _currentPhase;
-
         emit MintingPhaseUpdated(_currentPhase);
     }
 
     function setMerkleRoot(MintingPhase _currentPhase, bytes32 _merkleRoot) external onlyOwner {
         if(_currentPhase == MintingPhase.Phase1) {
-            phase1MerkleRoot == _merkleRoot;
+            phase1MerkleRoot = _merkleRoot;
         } else if (_currentPhase == MintingPhase.Phase2) {
             phase2MerkleRoot = _merkleRoot;
         }
@@ -90,10 +89,11 @@ contract MultiUtilityNFT is ERC721, Ownable, ReentrancyGuard {
         require(currentPhase == MintingPhase.Phase1, "Not phase 1");
         require(verifyMerkleProof(_phase1MerkleProof, phase1MerkleRoot), "Invalid proof");
 
-        _safeMint(msg.sender, tokenIdCounter);
+        uint256 _mintTokenId = tokenIdCounter;
+        _safeMint(msg.sender, _mintTokenId);
         tokenIdCounter += 1;
 
-        emit NFTMinted(msg.sender, tokenIdCounter, MintingPhase.Phase1);
+        emit NFTMinted(msg.sender, _mintTokenId, MintingPhase.Phase1);
     }
 
     function mintWithDiscount(bytes memory _signature, bytes32[] calldata _phase2MerkleProof) external nonReentrant isMerkleRootSet {
@@ -105,10 +105,11 @@ contract MultiUtilityNFT is ERC721, Ownable, ReentrancyGuard {
         bool _transfer = IERC20(paymentToken).transferFrom(msg.sender, address(this), discountedMintPrice);
         require(_transfer, "Transfer failed");
 
-        _safeMint(msg.sender, tokenIdCounter);
+        uint256 _mintTokenId = tokenIdCounter;
+        _safeMint(msg.sender, _mintTokenId);
         tokenIdCounter += 1;
 
-        emit NFTMinted(msg.sender, tokenIdCounter, MintingPhase.Phase2);
+        emit NFTMinted(msg.sender, _mintTokenId, MintingPhase.Phase2);
     }
 
     function mintWithoutDiscount() external nonReentrant {
@@ -116,10 +117,11 @@ contract MultiUtilityNFT is ERC721, Ownable, ReentrancyGuard {
         bool _transfer = IERC20(paymentToken).transferFrom(msg.sender, address(this), fullMintPrice);
         require(_transfer, "Transfer failed");
 
-        _safeMint(msg.sender, tokenIdCounter);
+        uint256 _mintTokenId = tokenIdCounter;
+        _safeMint(msg.sender, _mintTokenId);
         tokenIdCounter += 1;
 
-        emit NFTMinted(msg.sender, tokenIdCounter, MintingPhase.Phase3);
+        emit NFTMinted(msg.sender, _mintTokenId, MintingPhase.Phase3);
     }
 
     function createVestingStream() external onlyOwner {
