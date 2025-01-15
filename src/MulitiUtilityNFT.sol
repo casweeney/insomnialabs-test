@@ -8,9 +8,10 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/ISablier.sol";
+import "./ReentrancyGuard.sol";
 
 
-contract MultiUtilityNFT is ERC721, Ownable {
+contract MultiUtilityNFT is ERC721, Ownable, ReentrancyGuard {
     enum MintingPhase {
         InActive,
         Phase1,
@@ -33,6 +34,10 @@ contract MultiUtilityNFT is ERC721, Ownable {
 
     mapping(bytes => bool) public usedSignatures;
 
+    event NFTMinted(address indexed to, uint256 indexed tokenId, MintingPhase currentPhase);
+    event MintingPhaseUpdated(MintingPhase newPhase);
+    event VestingStreamCreated(uint256 streamId);
+
     constructor(
         address _paymentToken,
         address _sablierContractAddress,
@@ -49,6 +54,8 @@ contract MultiUtilityNFT is ERC721, Ownable {
 
     function setPhase(MintingPhase _currentPhase) external onlyOwner {
         currentPhase = _currentPhase;
+
+        emit MintingPhaseUpdated(_currentPhase);
     }
 
     function setMerkleRoot(MintingPhase _currentPhase, bytes32 _merkleRoot) external onlyOwner {
@@ -59,27 +66,29 @@ contract MultiUtilityNFT is ERC721, Ownable {
         }
     }
 
-    function verifySignature(bytes memory _signature) public view returns (bool) {
+    function verifySignature(bytes memory _signature) internal view returns (bool) {
         bytes32 messageHash = keccak256(abi.encodePacked(msg.sender, block.chainid));
         bytes32 ethSignedMessageHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
         address signer = ECDSA.recover(ethSignedMessageHash, _signature);
         return signer == owner() && !usedSignatures[_signature];
     }
 
-    function verifyMerkleProof(bytes32[] calldata proof, bytes32 root) public view returns (bool) {
+    function verifyMerkleProof(bytes32[] calldata proof, bytes32 root) internal view returns (bool) {
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
         return MerkleProof.verify(proof, root, leaf);
     }
 
-    function mintPhase1(bytes32[] calldata _merkleProof) external {
+    function mintPhase1(bytes32[] calldata _merkleProof) external nonReentrant {
         require(currentPhase == MintingPhase.Phase1, "Not phase 1");
         require(verifyMerkleProof(_merkleProof, phase1MerkleRoot), "Invalid proof");
 
         _safeMint(msg.sender, tokenIdCounter);
         tokenIdCounter += 1;
+
+        emit NFTMinted(msg.sender, tokenIdCounter, MintingPhase.Phase1);
     }
 
-    function mintPhase2(bytes memory _signature, bytes32[] calldata _merkleProof) external {
+    function mintPhase2(bytes memory _signature, bytes32[] calldata _merkleProof) external nonReentrant {
         require(currentPhase == MintingPhase.Phase2, "Not phase 2");
         require(verifyMerkleProof(_merkleProof, phase2MerkleRoot), "Invalid proof");
         require(verifySignature(_signature), "Invalid signature");
@@ -90,19 +99,23 @@ contract MultiUtilityNFT is ERC721, Ownable {
 
         _safeMint(msg.sender, tokenIdCounter);
         tokenIdCounter += 1;
+
+        emit NFTMinted(msg.sender, tokenIdCounter, MintingPhase.Phase2);
     }
 
-    function mintPhase3() external {
+    function mintPhase3() external nonReentrant {
         require(currentPhase == MintingPhase.Phase3, "Not phase 3");
-        bool _transfer = IERC20(paymentToken).transferFrom(msg.sender, fullMintPrice);
+        bool _transfer = IERC20(paymentToken).transferFrom(msg.sender, address(this), fullMintPrice);
         require(_transfer, "Transfer failed");
 
         _safeMint(msg.sender, tokenIdCounter);
 
         tokenIdCounter += 1;
+
+        emit NFTMinted(msg.sender, tokenIdCounter, MintingPhase.Phase3);
     }
 
-    function createVestingStream() external {
+    function createVestingStream() external onlyOwner {
         uint256 _contractBalance = IERC20(paymentToken).balanceOf(address(this));
         require(_contractBalance > 0, "No tokens to vest");
 
@@ -118,10 +131,12 @@ contract MultiUtilityNFT is ERC721, Ownable {
             _startTime,
             _endTime
         );
+
+        emit VestingStreamCreated(_streamId);
     }
 
     function withdrawVestedTokens(uint256 _streamId) external onlyOwner {
-        uint256 _amountToWithdraw = ISablier.balanceOf(_streamId, owner());
+        uint256 _amountToWithdraw = ISablier(sablierContractAddress).balanceOf(_streamId, owner());
         ISablier(sablierContractAddress).withdrawFromStream(_streamId, _amountToWithdraw);
     }
 }
