@@ -1,10 +1,15 @@
 {
   "scripts": {
-    "generate": "ts-node script/ts/generators/merkle.ts",
+    "generate-free": "ts-node script/typescript/freeMerkle.ts",
+    "generate-discount": "ts-node script/typescript/discountMerkle.ts",
     "build:scripts": "tsc"
   },
   "dependencies": {
-    "@openzeppelin/merkle-tree": "^1.0.7"
+    "@openzeppelin/merkle-tree": "^1.0.7",
+    "csv-parser": "^3.1.0",
+    "ethers": "5.7.2",
+    "keccak256": "^1.0.6",
+    "merkletreejs": "^0.4.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",

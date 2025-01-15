@@ -1,0 +1,41 @@
+{
+    "0x14fab7ffc93cecea209cd310a18eb1a760a904a0": {
+        "leaf": "0xc9ff1834efb5f8a84e46babb16acf3ff90fd4483520b27703030aa6a3d4ec339",
+        "proof": [
+            "0x76e5a58652e2631aa890369cf48134ea86653fbed2e1713a09548a1bfa21671e",
+            "0x339edfea6c96e5cc7156a7f7ef88baddf54d2ddf812b2b3b79644b2e4a1a9749",
+            "0x6171b07b1fd246ed288b1bd205d74944ed4a45bafd651596e88e9cda7163f159"
+        ]
+    },
+    "0xe32971a6c76188ee8eb336e80b97fc079dcedbeb": {
+        "leaf": "0x76e5a58652e2631aa890369cf48134ea86653fbed2e1713a09548a1bfa21671e",
+        "proof": [
+            "0xc9ff1834efb5f8a84e46babb16acf3ff90fd4483520b27703030aa6a3d4ec339",
+            "0x339edfea6c96e5cc7156a7f7ef88baddf54d2ddf812b2b3b79644b2e4a1a9749",
+            "0x6171b07b1fd246ed288b1bd205d74944ed4a45bafd651596e88e9cda7163f159"
+        ]
+    },
+    "0x3281e1230367bcdee7ff37331a1798b9f2af0c53": {
+        "leaf": "0xfa200c205094c2f37e089677749f95853e4cf47a1ff459d9ca92b6fda5c5a3c7",
+        "proof": [
+            "0x870e3ac43736d605f488172ca5f6997a21a95bd6020a8cb65608a5c2a20114d8",
+            "0xd0e488b91fef44447d0ef9367df9d602cfacf707d173de3dce05a4a544b7cf4f",
+            "0x6171b07b1fd246ed288b1bd205d74944ed4a45bafd651596e88e9cda7163f159"
+        ]
+    },
+    "0xc8211f26bb21afc25bb784208a63d96deaae55cb": {
+        "leaf": "0x870e3ac43736d605f488172ca5f6997a21a95bd6020a8cb65608a5c2a20114d8",
+        "proof": [
+            "0xfa200c205094c2f37e089677749f95853e4cf47a1ff459d9ca92b6fda5c5a3c7",
+            "0xd0e488b91fef44447d0ef9367df9d602cfacf707d173de3dce05a4a544b7cf4f",
+            "0x6171b07b1fd246ed288b1bd205d74944ed4a45bafd651596e88e9cda7163f159"
+        ]
+    },
+    "0xf9056af4cd1211dd9638e9979e99a43de830779e": {
+        "leaf": "0x6171b07b1fd246ed288b1bd205d74944ed4a45bafd651596e88e9cda7163f159",
+        "proof": [
+            "0xcc49e8a223b856d7e62f9e36060365052c934b960deefa1fed3ccf5d9dac0b55"
+        ]
+    },
+    "root": "0x28c76d60beca26f761a5ba5234fe95ef75e95adc417ecea7b62a004fc1c9735a"
+}

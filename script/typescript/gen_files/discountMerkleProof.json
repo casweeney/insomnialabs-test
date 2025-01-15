@@ -1,0 +1,41 @@
+{
+    "0x99cb7f24da7f4bf494bb9740a3ff46d07bee1525": {
+        "leaf": "0x50162470ceb11cfc8247ed1013aa3c7967729791ff08b2f1f049f82a4bd78898",
+        "proof": [
+            "0x72f30e94f08af36b90dcbdc774814a7a5b59e90fad49cb96b382506ec231ec19",
+            "0x938376cde3b51c9c2ea617b1c1397deefb54c8a57bf1a8b26dbcc562707e3612",
+            "0x038a8b7def89e7496cbfdc49c8e529ab253fa76a34e2bcdee5f5d7cf9ec79229"
+        ]
+    },
+    "0x9a3a60f5aee7aef1fb0d4da8534452a2e2a89d46": {
+        "leaf": "0x72f30e94f08af36b90dcbdc774814a7a5b59e90fad49cb96b382506ec231ec19",
+        "proof": [
+            "0x50162470ceb11cfc8247ed1013aa3c7967729791ff08b2f1f049f82a4bd78898",
+            "0x938376cde3b51c9c2ea617b1c1397deefb54c8a57bf1a8b26dbcc562707e3612",
+            "0x038a8b7def89e7496cbfdc49c8e529ab253fa76a34e2bcdee5f5d7cf9ec79229"
+        ]
+    },
+    "0xf5ab70ada82e7260a4e09d79b8e09bd2fc08970c": {
+        "leaf": "0x3a5874a71384556d345f2802b29e98f3292438c8d85740cf519a88e42f804459",
+        "proof": [
+            "0xeb43df79716e9c2d77b6d341b1ec35629c43b5a01135c28b405a9695b3f00a45",
+            "0x66bd4702e756326a5154d6cd86267cf9308a93e92a88b2941ad9b800fa69582e",
+            "0x038a8b7def89e7496cbfdc49c8e529ab253fa76a34e2bcdee5f5d7cf9ec79229"
+        ]
+    },
+    "0xc9cd96ce406eeb5b7ccecf19415eb640953ff6a0": {
+        "leaf": "0xeb43df79716e9c2d77b6d341b1ec35629c43b5a01135c28b405a9695b3f00a45",
+        "proof": [
+            "0x3a5874a71384556d345f2802b29e98f3292438c8d85740cf519a88e42f804459",
+            "0x66bd4702e756326a5154d6cd86267cf9308a93e92a88b2941ad9b800fa69582e",
+            "0x038a8b7def89e7496cbfdc49c8e529ab253fa76a34e2bcdee5f5d7cf9ec79229"
+        ]
+    },
+    "0xfd5671504514c0214dfb30b1d820d71a891af913": {
+        "leaf": "0x038a8b7def89e7496cbfdc49c8e529ab253fa76a34e2bcdee5f5d7cf9ec79229",
+        "proof": [
+            "0xfc8bba7bebdc189f2912361c285690b38807a2637ca02daa6014eddd763d8b08"
+        ]
+    },
+    "root": "0x7cb15fa9c71a3576baae02544bbac81cfcd32e880112a93e56346909e7a67cfd"
+}
