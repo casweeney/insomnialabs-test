@@ -5,9 +5,7 @@ import {MultiUtilityNFT} from "../../src/MulitiUtilityNFT.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import { Base } from "../Base.t.sol";
 
-contract NFTUnitTest is Base {
-    
-
+contract MultiUtilityNFTUnitTest is Base {
     function testInitialState() public view {
         assertEq(address(nft.paymentToken()), address(paymentToken));
         assertEq(nft.sablierContractAddress(), address(sablier));
