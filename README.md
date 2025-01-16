@@ -14,7 +14,7 @@ The phase minting process requires that selected users who are verified using a 
 This is last minting stage, where anyone can mint an NFT at the full NFT price. Here there is no restriction to mint, users can mint as many NFTs they want, and they pay for every mint.
 
 ### Vesting
-After the minting process is done, the owner of the contract can lock the fee collected from minters in a linear vesting schedul for a year on Sablier protocol. Only the owner of the contract can withdraw the vested tokens.
+After the minting process is done, the owner of the contract can lock the fee collected from minters in a linear vesting schedule for a year on Sablier protocol. Only the owner of the contract can withdraw the vested tokens. The owner can only create vesting and withdraw vesting during the Vesting phase.
 
 ## Usage
 To clone the repo, run:

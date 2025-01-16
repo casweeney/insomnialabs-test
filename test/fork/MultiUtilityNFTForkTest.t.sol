@@ -33,6 +33,7 @@ contract MulitiUtilityNFTTest is Base {
         assertEq(initialContractBalance, FULL_MINT_PRICE, "Incorrect contract balance before stream creation");
 
         vm.startPrank(owner);
+        nft.setPhase(MultiUtilityNFT.MintingPhase.Vesting);
         vm.expectEmit(false, false, false, false);
         emit VestingStreamCreated(0);
         nft.createLockedVesting();
@@ -53,6 +54,8 @@ contract MulitiUtilityNFTTest is Base {
             FULL_MINT_PRICE,
             DISCOUNTED_MINT_PRICE
         );
+
+        nft.setPhase(MultiUtilityNFT.MintingPhase.Vesting);
         
         vm.expectRevert("No tokens to vest");
         nft.createLockedVesting();
@@ -84,6 +87,7 @@ contract MulitiUtilityNFTTest is Base {
         vm.stopPrank();
 
         vm.startPrank(owner);
+        nft.setPhase(MultiUtilityNFT.MintingPhase.Vesting);
         nft.createLockedVesting();
 
         // Warp time past cliff period
@@ -116,6 +120,8 @@ contract MulitiUtilityNFTTest is Base {
             FULL_MINT_PRICE,
             DISCOUNTED_MINT_PRICE
         );
+
+        nft.setPhase(MultiUtilityNFT.MintingPhase.Vesting);
 
         vm.stopPrank();
 
