@@ -1,5 +1,5 @@
 ## Multi Utility NFT Contract
-This repository contains the smart contract implementation of a Multi Utility NFT which has 3 phases of minting for different categories of users.
+This repository contains the smart contract implementation of a Multi Utility NFT which has 3 phases of minting for different categories of users and a last phase for vesting.
 
 ## Documentation
 The smart contract is made up of 3 minting phases:
