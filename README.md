@@ -40,5 +40,3 @@ Run:
 ```shell
 $ forge test
 ```
-
-## Implem
