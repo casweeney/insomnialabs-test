@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import { Base } from "../Base.t.sol";
 
 contract MulitiUtilityNFTTest is Base {
-    function testVestingStreamCreation() public {
+    function testCreateLockedVesting() public {
         string memory fork_url = vm.envString("MAINNET_FORK_URL");
         uint256 mainnetFork = vm.createFork(fork_url);
         vm.selectFork(mainnetFork);
@@ -35,12 +35,12 @@ contract MulitiUtilityNFTTest is Base {
         vm.startPrank(owner);
         vm.expectEmit(false, false, false, false);
         emit VestingStreamCreated(0);
-        nft.createVestingStream();
+        nft.createLockedVesting();
         
         vm.stopPrank();
     }
 
-    function testCreateVestingStream_NoBalance_Reverts() public {
+    function testCreateLockedVesting_NoBalance_Reverts() public {
         string memory fork_url = vm.envString("MAINNET_FORK_URL");
         uint256 mainnetFork = vm.createFork(fork_url);
         vm.selectFork(mainnetFork);
@@ -55,13 +55,13 @@ contract MulitiUtilityNFTTest is Base {
         );
         
         vm.expectRevert("No tokens to vest");
-        nft.createVestingStream();
+        nft.createLockedVesting();
         vm.stopPrank();
     }
 
     
 
-    function testWithdrawVestedTokens() public {
+    function testWithdrawLockedVestedTokens() public {
         string memory fork_url = vm.envString("MAINNET_FORK_URL");
         uint256 mainnetFork = vm.createFork(fork_url);
         vm.selectFork(mainnetFork);
@@ -84,7 +84,7 @@ contract MulitiUtilityNFTTest is Base {
         vm.stopPrank();
 
         vm.startPrank(owner);
-        nft.createVestingStream();
+        nft.createLockedVesting();
 
         // Warp time past cliff period
         vm.warp(block.timestamp + 721 days); // Past the total duration of 720 days
@@ -95,7 +95,7 @@ contract MulitiUtilityNFTTest is Base {
 
         vm.expectEmit(true, false, false, false);
         emit VestingTokensWithdrawn(lockId, 0);
-        nft.withdrawVestedTokens(lockId);
+        nft.withdrawLockedVestedTokens(lockId);
 
         uint256 balanceAfter = paymentToken.balanceOf(owner);
         assertTrue(balanceAfter > balanceBefore, "Balance should increase after withdrawal");
@@ -103,7 +103,7 @@ contract MulitiUtilityNFTTest is Base {
         vm.stopPrank();
     }
 
-    function testWithdrawVestedTokens_NotOwner_Reverts() public {
+    function testWithdrawLockedVestedTokens_NotOwner_Reverts() public {
         string memory fork_url = vm.envString("MAINNET_FORK_URL");
         uint256 mainnetFork = vm.createFork(fork_url);
         vm.selectFork(mainnetFork);
@@ -121,7 +121,7 @@ contract MulitiUtilityNFTTest is Base {
 
         vm.startPrank(freeMintUser);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, freeMintUser));
-        nft.withdrawVestedTokens(1);
+        nft.withdrawLockedVestedTokens(1);
         vm.stopPrank();
     }
 }

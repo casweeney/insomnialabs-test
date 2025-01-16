@@ -23,10 +23,10 @@ contract MultiUtilityNFT is ERC721, Ownable, ReentrancyGuard {
 
     MintingPhase public currentPhase;
 
-    uint256 public lockCreationCount;
     address public paymentToken;
     address public sablierContractAddress;
 
+    uint256 public lockCreationCount;
     uint256 public tokenIdCounter;
     uint256 public fullMintPrice;
     uint256 public discountedMintPrice;
@@ -133,7 +133,7 @@ contract MultiUtilityNFT is ERC721, Ownable, ReentrancyGuard {
         emit NFTMinted(msg.sender, _mintTokenId, MintingPhase.Phase3);
     }
 
-    function createVestingStream() external onlyOwner {
+    function createLockedVesting() external onlyOwner {
         uint256 _contractBalance = IERC20(paymentToken).balanceOf(address(this));
         require(_contractBalance > 0, "No tokens to vest");
 
@@ -159,7 +159,7 @@ contract MultiUtilityNFT is ERC721, Ownable, ReentrancyGuard {
         emit VestingStreamCreated(_streamId);
     }
 
-    function withdrawVestedTokens(uint256 _streamId) external onlyOwner {
+    function withdrawLockedVestedTokens(uint256 _streamId) external onlyOwner {
         uint256 _amountWithdrawn = ISablierV2LockupLinear(sablierContractAddress).withdrawMax({streamId: _streamId, to: owner()});
 
         emit VestingTokensWithdrawn(_streamId, _amountWithdrawn);
