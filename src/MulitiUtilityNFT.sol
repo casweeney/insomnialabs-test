@@ -103,7 +103,6 @@ contract MultiUtilityNFT is ERC721, Ownable, ReentrancyGuard {
     }
 
     function mintWithDiscount(bytes memory _signature, bytes32[] calldata _phase2MerkleProof) external nonReentrant isMerkleRootSet {
-        require(!hasMinted[msg.sender], "Already minted");
         require(!usedSignatures[_signature], "Signature already used");
         require(currentPhase == MintingPhase.Phase2, "Not phase 2");
         require(verifyMerkleProof(_phase2MerkleProof, phase2MerkleRoot), "Invalid proof");
@@ -113,8 +112,6 @@ contract MultiUtilityNFT is ERC721, Ownable, ReentrancyGuard {
         bool _transfer = IERC20(paymentToken).transferFrom(msg.sender, address(this), discountedMintPrice);
         require(_transfer, "Transfer failed");
 
-        hasMinted[msg.sender] = true;
-
         uint256 _mintTokenId = tokenIdCounter;
         _safeMint(msg.sender, _mintTokenId);
         tokenIdCounter += 1;
@@ -123,12 +120,9 @@ contract MultiUtilityNFT is ERC721, Ownable, ReentrancyGuard {
     }
 
     function mintWithoutDiscount() external nonReentrant {
-        require(!hasMinted[msg.sender], "Already minted");
         require(currentPhase == MintingPhase.Phase3, "Not phase 3");
         bool _transfer = IERC20(paymentToken).transferFrom(msg.sender, address(this), fullMintPrice);
         require(_transfer, "Transfer failed");
-
-        hasMinted[msg.sender] = true;
 
         uint256 _mintTokenId = tokenIdCounter;
         _safeMint(msg.sender, _mintTokenId);

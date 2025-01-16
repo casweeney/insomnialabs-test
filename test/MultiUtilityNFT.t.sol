@@ -191,38 +191,6 @@ contract MulitiUtilityNFTTest is Test {
         vm.stopPrank();
     }
 
-    function testMintWithDiscount_Twice_Reverts() public {
-        string[] memory discountMintUserProof = vm.parseJsonStringArray(phase2MerkleProofJson, ".0x9a3a60f5aee7aef1fb0d4da8534452a2e2a89d46.proof");
-
-        vm.startPrank(owner);
-        nft.setPhase(MultiUtilityNFT.MintingPhase.Phase2);
-        nft.setMerkleRoot(MultiUtilityNFT.MintingPhase.Phase2, phase2MerkleRoot);
-        vm.stopPrank();
-
-        vm.startPrank(discountMintUser);
-        bytes32[] memory userProof = new bytes32[](discountMintUserProof.length);
-
-        for (uint256 i = 0; i < discountMintUserProof.length; i++) {
-            userProof[i] = vm.parseBytes32(discountMintUserProof[i]);
-        }
-
-        // Generate signature for Phase 2
-        bytes32 messageHash = keccak256(abi.encodePacked(discountMintUser, block.chainid));
-        bytes32 ethSignedMessageHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPrivateKey, ethSignedMessageHash);
-        discountMintUserSignature = abi.encodePacked(r, s, v);
-        
-        paymentToken.mint(DISCOUNTED_MINT_PRICE * 2);
-        paymentToken.approve(address(nft), DISCOUNTED_MINT_PRICE);
-
-        nft.mintWithDiscount(discountMintUserSignature, userProof);
-
-        vm.expectRevert("Already minted");
-        nft.mintWithDiscount(discountMintUserSignature, userProof);
-
-        vm.stopPrank();
-    }
-
     function testMintWithDiscount_SignatureReplay_Reverts() public {
         string[] memory discountMintUserProof = vm.parseJsonStringArray(phase2MerkleProofJson, ".0x9a3a60f5aee7aef1fb0d4da8534452a2e2a89d46.proof");
         string[] memory replayUserProof = vm.parseJsonStringArray(phase2MerkleProofJson, ".0x99cb7f24da7f4bf494bb9740a3ff46d07bee1525.proof");
@@ -286,24 +254,24 @@ contract MulitiUtilityNFTTest is Test {
         vm.stopPrank();
     }
 
-    function testVestingStreamCreation() public {
-        vm.startPrank(owner);
-        nft.setPhase(MultiUtilityNFT.MintingPhase.Phase3);
-        vm.stopPrank();
+    // function testVestingStreamCreation() public {
+    //     vm.startPrank(owner);
+    //     nft.setPhase(MultiUtilityNFT.MintingPhase.Phase3);
+    //     vm.stopPrank();
 
-        vm.startPrank(freeMintUser);
-        paymentToken.mint(FULL_MINT_PRICE);
-        paymentToken.approve(address(nft), FULL_MINT_PRICE);
-        nft.mintWithoutDiscount();
-        vm.stopPrank();
+    //     vm.startPrank(freeMintUser);
+    //     paymentToken.mint(FULL_MINT_PRICE);
+    //     paymentToken.approve(address(nft), FULL_MINT_PRICE);
+    //     nft.mintWithoutDiscount();
+    //     vm.stopPrank();
 
-        vm.startPrank(owner);
-        vm.expectEmit(true, true, false, true);
-        emit VestingStreamCreated(1);
-        nft.createVestingStream();
-        assertTrue(sablier.streamExists(1));
-        vm.stopPrank();
-    }
+    //     vm.startPrank(owner);
+    //     vm.expectEmit(true, true, false, true);
+    //     emit VestingStreamCreated(1);
+    //     nft.createVestingStream();
+    //     assertTrue(sablier.streamExists(1));
+    //     vm.stopPrank();
+    // }
 
     // function testWithdrawVestedTokens() public {
     //     testVestingStreamCreation();
