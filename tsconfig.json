@@ -15,7 +15,7 @@
     // Paths
     "baseUrl": ".",
     "paths": {
-      "@/*": ["script/typescript/*"]
+      "@/*": ["script/ts/*"]
     },
 
     // Output
@@ -35,6 +35,6 @@
     "composite": true,
     "declarationMap": true
   },
-  "include": ["script/typescript/**/*"],
+  "include": ["script/ts/**/*"],
   "exclude": ["node_modules", "dist", "test", "src", "lib"]
 }

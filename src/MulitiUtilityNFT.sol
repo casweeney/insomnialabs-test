@@ -7,8 +7,10 @@ import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./interfaces/ISablier.sol";
-import "./ReentrancyGuard.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {ISablierV2LockupLinear} from "@sablier/v2-core/src/interfaces/ISablierV2LockupLinear.sol";
+import {Broker, LockupLinear} from "@sablier/v2-core/src/types/DataTypes.sol";
+import {ud60x18} from "@prb/math/src/UD60x18.sol";
 
 
 contract MultiUtilityNFT is ERC721, Ownable, ReentrancyGuard {
@@ -32,6 +34,7 @@ contract MultiUtilityNFT is ERC721, Ownable, ReentrancyGuard {
     bytes32 phase2MerkleRoot;
 
     mapping(bytes => bool) public usedSignatures;
+    mapping(address => bool) public hasMinted;
 
     event NFTMinted(address indexed to, uint256 indexed tokenId, MintingPhase currentPhase);
     event MintingPhaseUpdated(MintingPhase newPhase);
@@ -86,8 +89,11 @@ contract MultiUtilityNFT is ERC721, Ownable, ReentrancyGuard {
     }
 
     function mint(bytes32[] calldata _phase1MerkleProof) external nonReentrant isMerkleRootSet {
+        require(!hasMinted[msg.sender], "Already minted");
         require(currentPhase == MintingPhase.Phase1, "Not phase 1");
         require(verifyMerkleProof(_phase1MerkleProof, phase1MerkleRoot), "Invalid proof");
+
+        hasMinted[msg.sender] = true;
 
         uint256 _mintTokenId = tokenIdCounter;
         _safeMint(msg.sender, _mintTokenId);
@@ -97,6 +103,7 @@ contract MultiUtilityNFT is ERC721, Ownable, ReentrancyGuard {
     }
 
     function mintWithDiscount(bytes memory _signature, bytes32[] calldata _phase2MerkleProof) external nonReentrant isMerkleRootSet {
+        require(!hasMinted[msg.sender], "Already minted");
         require(currentPhase == MintingPhase.Phase2, "Not phase 2");
         require(verifyMerkleProof(_phase2MerkleProof, phase2MerkleRoot), "Invalid proof");
         require(verifySignature(_signature), "Invalid signature");
@@ -104,6 +111,8 @@ contract MultiUtilityNFT is ERC721, Ownable, ReentrancyGuard {
         usedSignatures[_signature] = true;
         bool _transfer = IERC20(paymentToken).transferFrom(msg.sender, address(this), discountedMintPrice);
         require(_transfer, "Transfer failed");
+
+        hasMinted[msg.sender] = true;
 
         uint256 _mintTokenId = tokenIdCounter;
         _safeMint(msg.sender, _mintTokenId);
@@ -113,9 +122,12 @@ contract MultiUtilityNFT is ERC721, Ownable, ReentrancyGuard {
     }
 
     function mintWithoutDiscount() external nonReentrant {
+        require(!hasMinted[msg.sender], "Already minted");
         require(currentPhase == MintingPhase.Phase3, "Not phase 3");
         bool _transfer = IERC20(paymentToken).transferFrom(msg.sender, address(this), fullMintPrice);
         require(_transfer, "Transfer failed");
+
+        hasMinted[msg.sender] = true;
 
         uint256 _mintTokenId = tokenIdCounter;
         _safeMint(msg.sender, _mintTokenId);
@@ -130,24 +142,25 @@ contract MultiUtilityNFT is ERC721, Ownable, ReentrancyGuard {
 
         IERC20(paymentToken).approve(sablierContractAddress, _contractBalance);
 
-        uint256 _startTime = block.timestamp;
-        uint256 _endTime = _startTime + 365 days;
+        LockupLinear.CreateWithDurations memory params;
 
-        uint256 _streamId = ISablier(sablierContractAddress).createStream(
-            owner(),
-            _contractBalance,
-            paymentToken,
-            _startTime,
-            _endTime
-        );
+        params.sender = address(this);
+        params.recipient = owner();
+        params.totalAmount = uint128(_contractBalance);
+        params.asset = IERC20(paymentToken);
+        params.cancelable = false;
+        params.transferable = true;
+        params.durations = LockupLinear.Durations({cliff: 365 days, total: 720 days});
+        params.broker = Broker(address(0), ud60x18(0));
+
+        uint256 _streamId = ISablierV2LockupLinear(sablierContractAddress).createWithDurations(params);
 
         emit VestingStreamCreated(_streamId);
     }
 
     function withdrawVestedTokens(uint256 _streamId) external onlyOwner {
-        uint256 _amountToWithdraw = ISablier(sablierContractAddress).balanceOf(_streamId, owner());
-        ISablier(sablierContractAddress).withdrawFromStream(_streamId, _amountToWithdraw);
+        uint256 _amountWithdrawn = ISablierV2LockupLinear(sablierContractAddress).withdrawMax({streamId: _streamId, to: owner()});
 
-        emit VestingTokensWithdrawn(_streamId, _amountToWithdraw);
+        emit VestingTokensWithdrawn(_streamId, _amountWithdrawn);
     }
 }
