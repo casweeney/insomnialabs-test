@@ -7,6 +7,7 @@ import {PaymentToken} from "../src/mocks/PaymentToken.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {ISablierV2LockupLinear} from "@sablier/v2-core/src/interfaces/ISablierV2LockupLinear.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract MulitiUtilityNFTTest is Test {
     MultiUtilityNFT public nft;
@@ -22,7 +23,7 @@ contract MulitiUtilityNFTTest is Test {
 
     bytes32 public phase1MerkleRoot;
     bytes32 public phase2MerkleRoot;
-
+    address mainnetUser = 0xf584F8728B874a6a5c7A8d4d387C9aae9172D621;
     address owner;
     uint256 ownerPrivateKey;
     address freeMintUser = 0x14fAB7Ffc93CECea209cd310A18eb1a760A904a0; // user from the phase1 addresses
@@ -44,6 +45,7 @@ contract MulitiUtilityNFTTest is Test {
         vm.startPrank(owner);
 
         paymentToken = new PaymentToken();
+        sablier = ISablierV2LockupLinear(0x3962f6585946823440d274aD7C719B02b49DE51E); // Ethereum mainnet address
 
         nft = new MultiUtilityNFT(
             address(paymentToken),
@@ -254,33 +256,122 @@ contract MulitiUtilityNFTTest is Test {
         vm.stopPrank();
     }
 
-    // function testVestingStreamCreation() public {
-    //     vm.startPrank(owner);
-    //     nft.setPhase(MultiUtilityNFT.MintingPhase.Phase3);
-    //     vm.stopPrank();
 
-    //     vm.startPrank(freeMintUser);
-    //     paymentToken.mint(FULL_MINT_PRICE);
-    //     paymentToken.approve(address(nft), FULL_MINT_PRICE);
-    //     nft.mintWithoutDiscount();
-    //     vm.stopPrank();
+    function testVestingStreamCreation() public {
+        string memory fork_url = vm.envString("MAINNET_FORK_URL");
+        uint256 mainnetFork = vm.createFork(fork_url);
+        vm.selectFork(mainnetFork);
 
-    //     vm.startPrank(owner);
-    //     vm.expectEmit(true, true, false, true);
-    //     emit VestingStreamCreated(1);
-    //     nft.createVestingStream();
-    //     assertTrue(sablier.streamExists(1));
-    //     vm.stopPrank();
-    // }
+        vm.startPrank(owner);
+        paymentToken = new PaymentToken();
+        nft = new MultiUtilityNFT(
+            address(paymentToken),
+            0x3962f6585946823440d274aD7C719B02b49DE51E, // Ethereum Mainnet Sablier V2 address
+            FULL_MINT_PRICE,
+            DISCOUNTED_MINT_PRICE
+        );
+        nft.setPhase(MultiUtilityNFT.MintingPhase.Phase3);
+        vm.stopPrank();
 
-    // function testWithdrawVestedTokens() public {
-    //     testVestingStreamCreation();
+        vm.startPrank(freeMintUser);
+        paymentToken.mint(FULL_MINT_PRICE);
+        paymentToken.approve(address(nft), FULL_MINT_PRICE);
+        nft.mintWithoutDiscount();
+        vm.stopPrank();
 
-    //     vm.startPrank(owner);
-    //     vm.expectEmit(true, true, false, true);
-    //     emit VestingTokensWithdrawn(1, FULL_MINT_PRICE);
-    //     vm.warp(block.timestamp + 366 days);
-    //     nft.withdrawVestedTokens(1);
-    //     vm.stopPrank();
-    // }
+        uint256 initialContractBalance = paymentToken.balanceOf(address(nft));
+        assertEq(initialContractBalance, FULL_MINT_PRICE, "Incorrect contract balance before stream creation");
+
+        vm.startPrank(owner);
+        vm.expectEmit(false, false, false, false);
+        emit VestingStreamCreated(0);
+        nft.createVestingStream();
+        
+        vm.stopPrank();
+    }
+
+    function testCreateVestingStream_NoBalance_Reverts() public {
+        string memory fork_url = vm.envString("MAINNET_FORK_URL");
+        uint256 mainnetFork = vm.createFork(fork_url);
+        vm.selectFork(mainnetFork);
+
+        vm.startPrank(owner);
+        paymentToken = new PaymentToken();
+        nft = new MultiUtilityNFT(
+            address(paymentToken),
+            0x3962f6585946823440d274aD7C719B02b49DE51E,
+            FULL_MINT_PRICE,
+            DISCOUNTED_MINT_PRICE
+        );
+        
+        vm.expectRevert("No tokens to vest");
+        nft.createVestingStream();
+        vm.stopPrank();
+    }
+
+    
+
+    function testWithdrawVestedTokens() public {
+        string memory fork_url = vm.envString("MAINNET_FORK_URL");
+        uint256 mainnetFork = vm.createFork(fork_url);
+        vm.selectFork(mainnetFork);
+
+        vm.startPrank(owner);
+        paymentToken = new PaymentToken();
+        nft = new MultiUtilityNFT(
+            address(paymentToken),
+            0x3962f6585946823440d274aD7C719B02b49DE51E,
+            FULL_MINT_PRICE,
+            DISCOUNTED_MINT_PRICE
+        );
+        nft.setPhase(MultiUtilityNFT.MintingPhase.Phase3);
+        vm.stopPrank();
+
+        vm.startPrank(freeMintUser);
+        paymentToken.mint(FULL_MINT_PRICE);
+        paymentToken.approve(address(nft), FULL_MINT_PRICE);
+        nft.mintWithoutDiscount();
+        vm.stopPrank();
+
+        vm.startPrank(owner);
+        nft.createVestingStream();
+
+        // Warp time past cliff period
+        vm.warp(block.timestamp + 721 days); // Past the total duration of 720 days
+
+        uint256 lockCountId = nft.lockCreationCount();
+        uint256 lockId = nft.getLockId(lockCountId);
+        uint256 balanceBefore = paymentToken.balanceOf(owner);
+
+        vm.expectEmit(true, false, false, false);
+        emit VestingTokensWithdrawn(lockId, 0);
+        nft.withdrawVestedTokens(lockId);
+
+        uint256 balanceAfter = paymentToken.balanceOf(owner);
+        assertTrue(balanceAfter > balanceBefore, "Balance should increase after withdrawal");
+
+        vm.stopPrank();
+    }
+
+    function testWithdrawVestedTokens_NotOwner_Reverts() public {
+        string memory fork_url = vm.envString("MAINNET_FORK_URL");
+        uint256 mainnetFork = vm.createFork(fork_url);
+        vm.selectFork(mainnetFork);
+
+        vm.startPrank(owner);
+        paymentToken = new PaymentToken();
+        nft = new MultiUtilityNFT(
+            address(paymentToken),
+            0x3962f6585946823440d274aD7C719B02b49DE51E,
+            FULL_MINT_PRICE,
+            DISCOUNTED_MINT_PRICE
+        );
+
+        vm.stopPrank();
+
+        vm.startPrank(freeMintUser);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, freeMintUser));
+        nft.withdrawVestedTokens(1);
+        vm.stopPrank();
+    }
 }
