@@ -104,6 +104,7 @@ contract MultiUtilityNFT is ERC721, Ownable, ReentrancyGuard {
 
     function mintWithDiscount(bytes memory _signature, bytes32[] calldata _phase2MerkleProof) external nonReentrant isMerkleRootSet {
         require(!hasMinted[msg.sender], "Already minted");
+        require(!usedSignatures[_signature], "Signature already used");
         require(currentPhase == MintingPhase.Phase2, "Not phase 2");
         require(verifyMerkleProof(_phase2MerkleProof, phase2MerkleRoot), "Invalid proof");
         require(verifySignature(_signature), "Invalid signature");
